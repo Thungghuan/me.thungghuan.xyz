@@ -1,59 +1,69 @@
-import path from 'path'
+import { fileURLToPath, URL } from 'url'
 import { defineConfig } from 'vite'
+
+import Unocss from 'unocss/vite'
+import { presetAttributify, presetUno } from 'unocss'
 import Vue from '@vitejs/plugin-vue'
 import Pages from 'vite-plugin-pages'
-import ViteIcons, { ViteIconsResolver } from 'vite-plugin-icons'
-import ViteComponents from 'vite-plugin-components'
-import WindiCSS from 'vite-plugin-windicss'
+import Layouts from 'vite-plugin-vue-layouts'
+import AutoImport from 'unplugin-auto-import/vite'
+import Components from 'unplugin-vue-components/vite'
+import Markdown from 'vite-plugin-md'
+import Prism from 'markdown-it-prism'
+import InlineCodeClass from './utils/inlineCodeClass'
+import Anchor from 'markdown-it-anchor'
+import Inspect from 'vite-plugin-inspect'
 
+// https://vitejs.dev/config/
 export default defineConfig({
-  resolve: {
-    alias: {
-      '~/': `${path.resolve(__dirname, 'src')}/`,
-    },
-  },
   plugins: [
-    Vue(),
-
-    // https://github.com/hannoeru/vite-plugin-pages
-    Pages(),
-
-    // https://github.com/antfu/vite-plugin-components
-    ViteComponents({
-      // generate `components.d.ts` for ts support with Volar
-      globalComponentsDeclaration: true,
-
-      // auto import icons
-      customComponentResolvers: [
-        // https://github.com/antfu/vite-plugin-icons
-        ViteIconsResolver({
-          componentPrefix: '',
-          // enabledCollections: ['carbon']
-        }),
-      ],
+    Unocss({
+      presets: [presetAttributify(), presetUno()]
     }),
 
-    // https://github.com/antfu/vite-plugin-icons
-    ViteIcons(),
+    Vue({
+      include: [/\.vue$/, /\.md$/]
+    }),
 
-    // https://github.com/antfu/vite-plugin-windicss
-    WindiCSS(),
+    Pages({
+      extensions: ['vue', 'md'],
+      exclude: ['**/components/*.vue']
+    }),
+
+    Layouts(),
+
+    AutoImport({
+      imports: ['vue', 'vue-router']
+    }),
+
+    Components({
+      include: [/\.vue$/, /\.vue\?vue/, /\.md$/]
+    }),
+
+    MdPreprocess(),
+
+    Markdown({
+      wrapperComponent: 'post',
+      wrapperClasses: 'md-wrapper',
+      markdownItSetup: (md) => {
+        md.use(Prism)
+
+        md.use(InlineCodeClass)
+
+        md.use(Anchor, {
+          permalink: Anchor.permalink.linkInsideHeader({
+            symbol: '#',
+            renderAttrs: () => ({ 'aria-hidden': 'true' })
+          })
+        })
+      }
+    }),
+
+    Inspect()
   ],
-
-  server: {
-    fs: {
-      strict: true,
-    },
-  },
-
-  optimizeDeps: {
-    include: [
-      'vue',
-      'vue-router',
-      '@vueuse/core',
-    ],
-    exclude: [
-      'vue-demi',
-    ],
-  },
+  resolve: {
+    alias: {
+      '@': fileURLToPath(new URL('./src', import.meta.url))
+    }
+  }
 })
