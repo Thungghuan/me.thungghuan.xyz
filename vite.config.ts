@@ -40,8 +40,6 @@ export default defineConfig({
       include: [/\.vue$/, /\.vue\?vue/, /\.md$/]
     }),
 
-    MdPreprocess(),
-
     Markdown({
       wrapperComponent: 'post',
       wrapperClasses: 'md-wrapper',
